@@ -1,0 +1,5 @@
+Flask
+transformers
+torch==2.3.0+cu121 # Version PyTorch pour CUDA 12.1 (vérifiez la compatibilité si vous changez de version)
+accelerate # Nécessaire ou recommandé pour certaines optimisations avec Transformers
+gunicorn # Serveur WSGI recommandé pour la production
