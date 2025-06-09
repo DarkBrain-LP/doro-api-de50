@@ -114,10 +114,11 @@ def ask_dora():
 
     return jsonify({"question": question, "answer": answer})
 
-# --- Point d'entrée de l'application ---
+# --- Charger le modèle DORA au démarrage ---
+load_dora_model()  # <-- Déplacé ici pour qu'il soit appelé aussi avec Gunicorn
+
+# --- Point d'entrée (facultatif si tu veux lancer Flask manuellement) ---
 if __name__ == '__main__':
     print("[FLASK] Démarrage de l'application Flask...")
-    load_dora_model()
-    # Cloud Run fournit le port via la variable d'environnement PORT (par défaut 8080)
     port = int(os.environ.get("PORT", 8080))
-    app.run(host='0.0.0.0', port=port, debug=False) # Désactivez le debug pour la production
+app.run(host='0.0.0.0', port=port, debug=False)
