@@ -17,6 +17,9 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt \
     --extra-index-url https://download.pytorch.org/whl/cu121
 
+# copie du modele
+COPY ./merged_model  ./dora-model
+
 # Copier le code
 COPY app.py .
 
