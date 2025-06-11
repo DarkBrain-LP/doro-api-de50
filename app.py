@@ -3,42 +3,42 @@ import torch
 from flask import Flask, request, jsonify
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import os
+from huggingface_hub import login
+#login(token=os.getenv("HF_TOKEN"))
+
 # from accelerate import Accelerator # Décommenter si vous comptez l'utiliser explicitement, mais pas essentiel ici
 
 # --- Configuration de Flask ---
 app = Flask(__name__)
 
 # --- Configuration du modèle DORA ---
-MODEL_PATH = "xijins/DE50-project" # Assurez-vous que c'est bien le nom exact du modèle Hugging Face
+MODEL_PATH = "/app/dora-model" #"xijins/DE50-project" # Assurez-vous que c'est bien le nom exact du modèle Hugging Face
 MAX_NEW_TOKENS = 100 # Ajustez selon la longueur de réponse désirée et la performance (GPU devrait être rapide)
 
 # Variables globales pour le modèle et le tokenizer
 model = None
 tokenizer = None
-
 def load_dora_model():
-    """Charge le modèle et le tokenizer DORA au démarrage de l'application, utilisant le GPU."""
     global model, tokenizer
     try:
-        print(f"[DORA] Chargement du modèle DORA depuis : {MODEL_PATH}")
-        tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH)
+        #print(f"[DORA] Authentification Hugging Face...")
+        #login(token=os.getenv("HF_TOKEN"))  # <-- Ajout ici
 
-        # UTILISATION DU GPU : force l'utilisation du GPU si disponible.
-        # torch_dtype=torch.float16 est crucial pour la performance et la mémoire GPU.
-        # device_map="auto" permet à Transformers de gérer le placement sur le GPU.
+        print(f"[DORA] Chargement du modèle depuis : {MODEL_PATH}")
+        tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH)
         model = AutoModelForCausalLM.from_pretrained(
             MODEL_PATH,
             torch_dtype=torch.float16,
-            device_map="auto" # C'est ce qui va utiliser le GPU si disponible
+            device_map="auto"
         )
-        model.eval() # Met le modèle en mode évaluation
-        print("[DORA] Modèle DORA chargé avec succès sur le GPU !")
+        model.eval()
+        print("[DORA] Modèle chargé avec succès !")
     except Exception as e:
-        print(f"[DORA] Erreur CRITIQUE lors du chargement du modèle DORA : {e}")
+        print(f"[DORA] Erreur critique : {e}")
         model = None
         tokenizer = None
-        # Si le modèle ne charge pas, l'application devrait peut-être crasher pour être redémarrée
-        # ou renvoyer des erreurs claires.
+
+load_dora_model()
 
 def repondre_avec_dora(question: str) -> str:
     """
@@ -114,11 +114,10 @@ def ask_dora():
 
     return jsonify({"question": question, "answer": answer})
 
-# --- Charger le modèle DORA au démarrage ---
-load_dora_model()  # <-- Déplacé ici pour qu'il soit appelé aussi avec Gunicorn
-
-# --- Point d'entrée (facultatif si tu veux lancer Flask manuellement) ---
+# --- Point d'entrée de l'application ---
 if __name__ == '__main__':
     print("[FLASK] Démarrage de l'application Flask...")
+        #load_dora_model()
+    # Cloud Run fournit le port via la variable d'environnement PORT (par défaut 8080)
     port = int(os.environ.get("PORT", 8080))
-app.run(host='0.0.0.0', port=port, debug=False)
+    app.run(host='0.0.0.0', port=port, debug=False) # Désactivez le debug pour la production
